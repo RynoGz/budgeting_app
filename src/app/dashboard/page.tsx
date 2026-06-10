@@ -21,6 +21,7 @@ type Expense = {
   category: string;
   description: string | null;
   amount: number;
+  expense_date: string;
 };
 
 export default function DashboardPage() {
@@ -36,6 +37,15 @@ export default function DashboardPage() {
 
   const [expenses, setExpenses] =
     useState<Expense[]>([]);
+
+    const [editingExpenseId, setEditingExpenseId] =
+  useState<string | null>(null);
+
+const [editDescription, setEditDescription] =
+  useState("");
+
+const [editAmount, setEditAmount] =
+  useState("");
 
     const categories = [
   "Food",
@@ -104,7 +114,7 @@ const [savingExpense, setSavingExpense] =
 } = await supabase
   .from("expenses")
   .select(
-    "id, category, description, amount"
+    "id, category, description, amount, expense_date"
   )
   .eq(
     "monthly_budget_id",
@@ -216,6 +226,59 @@ if (!expenseRowsError && expenseRows) {
   } finally {
     setSavingExpense(false);
   }
+}
+
+    async function handleDeleteExpense(
+  id: string
+) {
+  const { error } = await supabase
+    .from("expenses")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  setExpenses((prev) =>
+    prev.filter(
+      (expense) => expense.id !== id
+    )
+  );
+}
+
+    async function handleSaveEdit(
+  id: string
+) {
+  const { error } = await supabase
+    .from("expenses")
+    .update({
+      description: editDescription,
+      amount: Number(editAmount),
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  setExpenses((prev) =>
+    prev.map((expense) =>
+      expense.id === id
+        ? {
+            ...expense,
+            description:
+              editDescription,
+            amount:
+              Number(editAmount),
+          }
+        : expense
+    )
+  );
+
+  setEditingExpenseId(null);
 }
 
   if (loading) {
@@ -494,12 +557,52 @@ const remaining =
   ) : (
     <div className="space-y-2">
       {expenses.map((expense) => (
-        <div
-          key={expense.id}
-          className="flex justify-between"
+  <div
+    key={expense.id}
+    className="border rounded p-3"
+  >
+    {editingExpenseId ===
+    expense.id ? (
+      <div className="space-y-2">
+        <input
+          type="text"
+          value={editDescription}
+          onChange={(e) =>
+            setEditDescription(
+              e.target.value
+            )
+          }
+          className="w-full border p-2 rounded"
+        />
+
+        <input
+          type="number"
+          value={editAmount}
+          onChange={(e) =>
+            setEditAmount(
+              e.target.value
+            )
+          }
+          className="w-full border p-2 rounded"
+        />
+
+        <button
+          onClick={() =>
+            handleSaveEdit(
+              expense.id
+            )
+          }
+          className="border px-3 py-1 rounded"
         >
+          Save
+        </button>
+      </div>
+    ) : (
+      <>
+        <div className="flex justify-between">
           <span>
-            {expense.description || expense.category}
+            {expense.description ||
+              expense.category}
           </span>
 
           <span>
@@ -508,8 +611,42 @@ const remaining =
           </span>
         </div>
 
-        
-      ))}
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={() => {
+              setEditingExpenseId(
+                expense.id
+              );
+
+              setEditDescription(
+                expense.description ??
+                  ""
+              );
+
+              setEditAmount(
+                expense.amount.toString()
+              );
+            }}
+            className="border px-3 py-1 rounded"
+          >
+            Edit
+          </button>
+
+          <button
+            onClick={() =>
+              handleDeleteExpense(
+                expense.id
+              )
+            }
+            className="border px-3 py-1 rounded"
+          >
+            Delete
+          </button>
+        </div>
+      </>
+    )}
+  </div>
+))}
     </div>
   )}
 </div>
