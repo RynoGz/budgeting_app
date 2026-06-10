@@ -4,11 +4,32 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
+type FixedExpense = {
+  id: string;
+  name: string;
+  category: string;
+  amount: number;
+};
+
 export default function CreateBudgetPage() {
   const router = useRouter();
 
   const [salary, setSalary] = useState("");
   const [savingsGoal, setSavingsGoal] =
+    useState("");
+  const [fixedExpenses, setFixedExpenses] =
+    useState<FixedExpense[]>([]);
+
+  const [saveAsDefault, setSaveAsDefault] =
+    useState(false);
+
+  const [newExpenseName, setNewExpenseName] =
+    useState("");
+
+  const [newExpenseCategory, setNewExpenseCategory] =
+    useState("");
+
+  const [newExpenseAmount, setNewExpenseAmount] =
     useState("");
 
   const [loading, setLoading] = useState(false);
@@ -38,11 +59,63 @@ export default function CreateBudgetPage() {
         setSavingsGoal(
           data.default_savings_goal.toString()
         );
-      }
+
+        const {
+        data: expenseData,
+        error: expenseError,
+        } = await supabase
+        .from("fixed_expenses")
+        .select("*")
+        .eq("template_id", data.id);
+
+        if (!expenseError && expenseData) {
+        setFixedExpenses(expenseData);
+        }
     }
+      }
+      
 
     loadTemplate();
   }, []);
+
+  function updateExpenseAmount(
+  id: string,
+  value: number
+) {
+  setFixedExpenses((prev) =>
+    prev.map((expense) =>
+      expense.id === id
+        ? {
+            ...expense,
+            amount: value,
+          }
+        : expense
+    )
+  );
+}
+    function addFixedExpense() {
+  if (
+    !newExpenseName.trim() ||
+    !newExpenseCategory.trim() ||
+    !newExpenseAmount
+  ) {
+    return;
+  }
+
+  setFixedExpenses((prev) => [
+    ...prev,
+    {
+      id: crypto.randomUUID(),
+      name: newExpenseName,
+      category: newExpenseCategory,
+      amount: Number(newExpenseAmount),
+    },
+  ]);
+
+  setNewExpenseName("");
+  setNewExpenseCategory("");
+  setNewExpenseAmount("");
+}
 
   async function handleCreateBudget() {
     try {
@@ -136,6 +209,43 @@ console.log(
         }
       }
 
+      if (saveAsDefault) {
+  for (const expense of fixedExpenses) {
+  const isNewExpense =
+    expense.id.length > 30;
+
+  if (isNewExpense) {
+    const {
+      error: insertError,
+    } = await supabase
+      .from("fixed_expenses")
+      .insert({
+        template_id: template.id,
+        name: expense.name,
+        category: expense.category,
+        amount: expense.amount,
+      });
+
+    if (insertError) {
+      throw insertError;
+    }
+  } else {
+    const {
+      error: updateError,
+    } = await supabase
+      .from("fixed_expenses")
+      .update({
+        amount: expense.amount,
+      })
+      .eq("id", expense.id);
+
+    if (updateError) {
+      throw updateError;
+    }
+  }
+}
+}
+
       router.push("/dashboard");
     } catch (error) {
       console.error(error);
@@ -157,6 +267,9 @@ console.log(
           Create Monthly Budget
         </h1>
 
+        <label className="block mb-1 font-medium">
+        Salary
+       </label>
         <input
           type="number"
           value={salary}
@@ -166,6 +279,9 @@ console.log(
           className="w-full border p-2 rounded"
         />
 
+        <label className="block mb-1 font-medium">
+          Savings Goal
+        </label>
         <input
           type="number"
           value={savingsGoal}
@@ -174,6 +290,103 @@ console.log(
           }
           className="w-full border p-2 rounded"
         />
+
+                <div>
+        <h2 className="font-semibold mb-3">
+            Fixed Expenses
+        </h2>
+
+        <div className="space-y-3">
+            {fixedExpenses.map((expense) => (
+            <div
+                key={expense.id}
+                className="flex gap-2 items-center"
+            >
+                <span className="w-40">
+                {expense.name}
+                </span>
+
+                <input
+                type="number"
+                value={expense.amount}
+                onChange={(e) =>
+                    updateExpenseAmount(
+                    expense.id,
+                    Number(e.target.value)
+                    )
+                }
+                className="flex-1 border p-2 rounded"
+                />
+            </div>
+            ))}
+        </div>
+        </div>
+        <div className="border-t pt-4 mt-4">
+  <h3 className="font-medium mb-3">
+    Add Fixed Expense
+  </h3>
+
+  <div className="space-y-3">
+
+    <input
+      type="text"
+      placeholder="Expense Name"
+      value={newExpenseName}
+      onChange={(e) =>
+        setNewExpenseName(
+          e.target.value
+        )
+      }
+      className="w-full border p-2 rounded"
+    />
+
+    <input
+      type="text"
+      placeholder="Category"
+      value={newExpenseCategory}
+      onChange={(e) =>
+        setNewExpenseCategory(
+          e.target.value
+        )
+      }
+      className="w-full border p-2 rounded"
+    />
+
+    <input
+      type="number"
+      placeholder="Amount"
+      value={newExpenseAmount}
+      onChange={(e) =>
+        setNewExpenseAmount(
+          e.target.value
+        )
+      }
+      className="w-full border p-2 rounded"
+    />
+
+    <button
+      type="button"
+      onClick={addFixedExpense}
+      className="border px-4 py-2 rounded"
+    >
+      Add Fixed Expense
+    </button>
+  </div>
+</div>
+
+                <label className="flex items-center gap-2">
+        <input
+            type="checkbox"
+            checked={saveAsDefault}
+            onChange={(e) =>
+            setSaveAsDefault(
+                e.target.checked
+            )
+            }
+        />
+
+        Save these changes as my new defaults
+        </label>
 
         <button
           type="button"

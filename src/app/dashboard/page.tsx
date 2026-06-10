@@ -313,6 +313,18 @@ if (!expenseRowsError && expenseRows) {
 const remaining =
   availableToSpend - spentThisMonth;
 
+  const categoryTotals =
+  expenses.reduce(
+    (acc, expense) => {
+      acc[expense.category] =
+        (acc[expense.category] || 0) +
+        expense.amount;
+
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
@@ -549,6 +561,36 @@ const remaining =
           </div>
           <div className="border p-4 rounded mt-6">
   <h2 className="font-semibold mb-4">
+    Spending By Category
+  </h2>
+
+  {Object.keys(categoryTotals)
+    .length === 0 ? (
+    <p>No expenses yet.</p>
+  ) : (
+    <div className="space-y-2">
+      {Object.entries(
+        categoryTotals
+      ).map(
+        ([category, total]) => (
+          <div
+            key={category}
+            className="flex justify-between"
+          >
+            <span>{category}</span>
+
+            <span>
+              R
+              {total.toLocaleString()}
+            </span>
+          </div>
+        )
+      )}
+    </div>
+  )}
+</div>
+          <div className="border p-4 rounded mt-6">
+  <h2 className="font-semibold mb-4">
     Recent Expenses
   </h2>
 
@@ -586,30 +628,52 @@ const remaining =
           className="w-full border p-2 rounded"
         />
 
-        <button
-          onClick={() =>
-            handleSaveEdit(
-              expense.id
-            )
-          }
-          className="border px-3 py-1 rounded"
-        >
-          Save
-        </button>
+        <div className="flex gap-2">
+  <button
+    onClick={() =>
+      handleSaveEdit(expense.id)
+    }
+    className="border px-3 py-1 rounded"
+  >
+    Save
+  </button>
+
+  <button
+    onClick={() => {
+      setEditingExpenseId(null);
+      setEditDescription("");
+      setEditAmount("");
+    }}
+    className="border px-3 py-1 rounded"
+  >
+    Cancel
+  </button>
+</div>
       </div>
     ) : (
       <>
         <div className="flex justify-between">
-          <span>
-            {expense.description ||
-              expense.category}
-          </span>
+  <div>
+    <p className="font-medium">
+      {expense.category}
+    </p>
 
-          <span>
-            R
-            {expense.amount.toLocaleString()}
-          </span>
-        </div>
+    <p className="text-sm text-gray-500">
+      {expense.description}
+    </p>
+
+    <p className="text-xs text-gray-400">
+      {new Date(
+        expense.expense_date
+      ).toLocaleDateString()}
+    </p>
+  </div>
+
+  <span>
+    R
+    {expense.amount.toLocaleString()}
+  </span>
+</div>
 
         <div className="flex gap-2 mt-2">
           <button

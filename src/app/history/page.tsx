@@ -65,7 +65,7 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-8 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">
           History
@@ -82,42 +82,75 @@ export default function HistoryPage() {
       </div>
 
       {budgets.length === 0 ? (
-        <p>No budgets found.</p>
-      ) : (
-        <div className="space-y-4">
-          {budgets.map((budget) => (
-            <div
-              key={budget.id}
-              className="border p-4 rounded"
-            >
-              <h2 className="font-semibold text-lg">
-                {new Date(
-                  budget.year,
-                  budget.month - 1
-                ).toLocaleString(
-                  "default",
-                  {
-                    month: "long",
-                    year: "numeric",
-                  }
-                )}
-              </h2>
+  <p>No budgets found.</p>
+) : (
+  <div className="grid md:grid-cols-2 gap-6">
+    {budgets.map((budget) => (
+      <div
+        key={budget.id}
+        className="
+          border
+          rounded-xl
+          p-6
+          shadow-sm
+          hover:shadow-md
+          transition
+        "
+      >
+        <h2 className="text-xl font-bold mb-4">
+          {new Date(
+            budget.year,
+            budget.month - 1
+          ).toLocaleString("default", {
+            month: "long",
+            year: "numeric",
+          })}
+        </h2>
 
-              <div className="mt-2 space-y-1">
-                <p>
-                  Income: R
-                  {budget.salary.toLocaleString()}
-                </p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="border rounded p-3">
+            <p className="text-sm text-gray-500">
+              Income
+            </p>
 
-                <p>
-                  Savings Goal: R
-                  {budget.savings_goal.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          ))}
+            <p className="font-semibold">
+              R
+              {budget.salary.toLocaleString()}
+            </p>
+          </div>
+
+          <div className="border rounded p-3">
+            <p className="text-sm text-gray-500">
+              Savings Goal
+            </p>
+
+            <p className="font-semibold">
+              R
+              {budget.savings_goal.toLocaleString()}
+            </p>
+          </div>
         </div>
-      )}
+
+        <button
+  onClick={() =>
+    router.push(
+      `/history/${budget.id}`
+    )
+  }
+  className="
+    mt-4
+    w-full
+    border
+    rounded
+    py-2
+  "
+>
+  View Details
+</button>
+      </div>
+    ))}
+  </div>
+)}
     </div>
   );
 }
