@@ -124,117 +124,161 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto mt-10">
-      <div className="space-y-6 border p-6 rounded-lg">
-        <h1 className="text-2xl font-bold">
-          Budget Setup
-        </h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+        
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">
+            Budget Setup
+          </h1>
+          <p className="text-slate-600">Configure your default budget template</p>
+        </div>
 
-        <input
-          type="number"
-          placeholder="Default Salary"
-          value={salary}
-          onChange={(e) =>
-            setSalary(e.target.value)
-          }
-          className="w-full border p-2 rounded"
-        />
+        <div className="bg-white rounded-xl shadow-md p-8 space-y-6">
 
-        <input
-          type="number"
-          placeholder="Default Savings Goal"
-          value={savingsGoal}
-          onChange={(e) =>
-            setSavingsGoal(e.target.value)
-          }
-          className="w-full border p-2 rounded"
-        />
-
-        <div>
-          <h2 className="text-xl font-semibold mb-4">
-            Fixed Expenses
-          </h2>
-
-          <div className="space-y-3">
-            {fixedExpenses.map(
-              (expense, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-3 gap-3"
-                >
-                  <input
-                    type="text"
-                    placeholder="Expense Name"
-                    value={expense.name}
-                    onChange={(e) =>
-                      updateExpense(
-                        index,
-                        "name",
-                        e.target.value
-                      )
-                    }
-                    className="border p-2 rounded"
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="Category"
-                    value={expense.category}
-                    onChange={(e) =>
-                      updateExpense(
-                        index,
-                        "category",
-                        e.target.value
-                      )
-                    }
-                    className="border p-2 rounded"
-                  />
-
-                  <input
-                    type="number"
-                    placeholder="Amount"
-                    value={expense.amount}
-                    onChange={(e) =>
-                      updateExpense(
-                        index,
-                        "amount",
-                        e.target.value
-                      )
-                    }
-                    className="border p-2 rounded"
-                  />
-                </div>
-              )
-            )}
+          {/* Salary Input */}
+          <div>
+            <label className="block text-sm font-medium text-slate-900 mb-2">
+              Default Monthly Salary
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-3 text-slate-500 font-semibold">R</span>
+              <input
+                type="number"
+                placeholder="0.00"
+                value={salary}
+                onChange={(e) =>
+                  setSalary(e.target.value)
+                }
+                className="w-full pl-8 px-4 py-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={addExpenseRow}
-            className="mt-4 border px-4 py-2 rounded"
-          >
-            + Add Fixed Expense
-          </button>
-        </div>
+          {/* Savings Goal Input */}
+          <div>
+            <label className="block text-sm font-medium text-slate-900 mb-2">
+              Default Savings Goal
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-3 text-slate-500 font-semibold">R</span>
+              <input
+                type="number"
+                placeholder="0.00"
+                value={savingsGoal}
+                onChange={(e) =>
+                  setSavingsGoal(e.target.value)
+                }
+                className="w-full pl-8 px-4 py-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
 
-        <div className="flex gap-4">
-          <button
-            type="button"
-            onClick={handleSaveTemplate}
-            disabled={loading}
-            className="border px-4 py-2 rounded"
-          >
-            {loading
-              ? "Saving..."
-              : "Save Template"}
-          </button>
-        </div>
+          {/* Fixed Expenses Section */}
+          <div className="border-t border-slate-200 pt-6">
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">
+              Fixed Expenses
+            </h2>
 
-        {message && (
-          <p className="text-sm text-red-500">
-            {message}
-          </p>
-        )}
+            <div className="space-y-3">
+              {fixedExpenses.map(
+                (expense, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Expense Name"
+                      value={expense.name}
+                      onChange={(e) =>
+                        updateExpense(
+                          index,
+                          "name",
+                          e.target.value
+                        )
+                      }
+                      className="px-4 py-2 rounded border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+
+                    <input
+                      type="text"
+                      placeholder="Category"
+                      value={expense.category}
+                      onChange={(e) =>
+                        updateExpense(
+                          index,
+                          "category",
+                          e.target.value
+                        )
+                      }
+                      className="px-4 py-2 rounded border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-slate-500">R</span>
+                      <input
+                        type="number"
+                        placeholder="Amount"
+                        value={expense.amount}
+                        onChange={(e) =>
+                          updateExpense(
+                            index,
+                            "amount",
+                            e.target.value
+                          )
+                        }
+                        className="w-full pl-6 px-3 py-2 rounded border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={addExpenseRow}
+              className="mt-4 w-full px-4 py-2 border-2 border-dashed border-blue-400 text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-colors"
+            >
+              + Add Fixed Expense
+            </button>
+          </div>
+
+          {/* Message */}
+          {message && (
+            <div className={`p-4 rounded-lg text-sm border ${
+              message.includes("success")
+                ? "bg-green-50 text-green-800 border-green-200"
+                : "bg-red-50 text-red-800 border-red-200"
+            }`}>
+              {message}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-6 border-t border-slate-200">
+            <button
+              type="button"
+              onClick={() => window.history.back()}
+              className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-900 rounded-lg hover:bg-slate-100 transition-all font-semibold"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSaveTemplate}
+              disabled={loading}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+            >
+              {loading
+                ? "Saving..."
+                : "Save Template"}
+            </button>
+          </div>
+
+        </div>
       </div>
     </div>
   );
