@@ -90,7 +90,7 @@ const [savingExpense, setSavingExpense] =
       const now = new Date();
 
       const {
-        data: budgetData,
+        data: budgetsData,
         error: budgetError,
       } = await supabase
         .from("monthly_budgets")
@@ -99,14 +99,14 @@ const [savingExpense, setSavingExpense] =
         )
         .eq("user_id", user.id)
         .eq("month", now.getMonth() + 1)
-        .eq("year", now.getFullYear())
-        .single();
+        .eq("year", now.getFullYear());
 
-      if (budgetError || !budgetData) {
+      if (budgetError || !budgetsData || budgetsData.length === 0) {
         setLoading(false);
         return;
       }
 
+      const budgetData = budgetsData[0];
       setBudget(budgetData);
 
       const {

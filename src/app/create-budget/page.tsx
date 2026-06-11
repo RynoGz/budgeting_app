@@ -49,16 +49,15 @@ export default function CreateBudgetPage() {
         .select(
           "id, default_salary, default_savings_goal"
         )
-        .eq("user_id", user.id)
-        .single();
+        .eq("user_id", user.id);
 
-      if (data) {
+      if (data && data.length > 0) {
         setSalary(
-          data.default_salary.toString()
+          data[0].default_salary.toString()
         );
 
         setSavingsGoal(
-          data.default_savings_goal.toString()
+          data[0].default_savings_goal.toString()
         );
 
         const {
@@ -67,7 +66,7 @@ export default function CreateBudgetPage() {
         } = await supabase
         .from("fixed_expenses")
         .select("*")
-        .eq("template_id", data.id);
+        .eq("template_id", data[0].id);
 
         if (!expenseError && expenseData) {
         setFixedExpenses(expenseData);
@@ -137,7 +136,7 @@ export default function CreateBudgetPage() {
       const month = now.getMonth() + 1;
       const year = now.getFullYear();
 
-      const { data: budget, error: budgetError } =
+      const { error: budgetInsertError } =
         await supabase
           .from("monthly_budgets")
           .insert({
@@ -146,44 +145,36 @@ export default function CreateBudgetPage() {
             year,
             salary: Number(salary),
             savings_goal: Number(savingsGoal),
-          })
-          .select()
-          .single();
+          });
 
-      if (budgetError) {
-        throw budgetError;
+      console.log("Budget insert error:", budgetInsertError);
+
+      if (budgetInsertError) {
+        console.error("Budget error:", budgetInsertError);
+        throw budgetInsertError;
       }
 
-      const { data: template, error: templateError } =
+      // Fetch the budget we just created
+      const { data: budgetData, error: budgetFetchError } =
         await supabase
-          .from("budget_templates")
-          .select("id")
+          .from("monthly_budgets")
+          .select("id, salary, savings_goal")
           .eq("user_id", user.id)
-          .single();
+          .eq("month", month)
+          .eq("year", year);
 
-      if (templateError) {
-        throw templateError;
+      console.log("Budget fetch response:", { budgetData, budgetFetchError });
+
+      if (budgetFetchError || !budgetData || budgetData.length === 0) {
+        const errorMsg = "Failed to create budget. A budget may already exist for this month.";
+        console.error(errorMsg, { budgetData, budgetFetchError });
+        throw new Error(errorMsg);
       }
 
-      const {
-        data: fixedExpenses,
-        error: fixedExpensesError,
-      } = await supabase
-        .from("fixed_expenses")
-        .select("*")
-        .eq("template_id", template.id);
+      const budget = budgetData[0];
+      console.log("Budget created:", budget);
 
-        console.log("Template:", template);
-console.log("Fixed Expenses:", fixedExpenses);
-console.log(
-  "Fixed Expenses Error:",
-  fixedExpensesError
-);
-
-      if (fixedExpensesError) {
-        throw fixedExpensesError;
-      }
-
+      // Use the local fixedExpenses state which includes both template and newly added expenses
       if (
         fixedExpenses &&
         fixedExpenses.length > 0
@@ -200,17 +191,54 @@ console.log(
             amount: expense.amount,
           }));
 
+        console.log("Expenses to insert:", expensesToInsert);
+
         const { error: copyError } =
           await supabase
             .from("monthly_fixed_expenses")
             .insert(expensesToInsert);
+
+        console.log("Fixed expenses insert response:", { copyError });
 
         if (copyError) {
           throw copyError;
         }
       }
 
-      if (saveAsDefault) {
+      console.log("saveAsDefault:", saveAsDefault, "fixedExpenses.length:", fixedExpenses.length);
+
+      if (saveAsDefault && fixedExpenses.length > 0) {
+        let template = null;
+        
+        // Try to get existing template
+        const { data: existingTemplates, error: templateError } =
+          await supabase
+            .from("budget_templates")
+            .select("id")
+            .eq("user_id", user.id);
+
+        // If no template exists, create one
+        if ((!existingTemplates || existingTemplates.length === 0) && !templateError) {
+          const { data: newTemplate, error: createTemplateError } =
+            await supabase
+              .from("budget_templates")
+              .insert({
+                user_id: user.id,
+                default_salary: Number(salary),
+                default_savings_goal: Number(savingsGoal),
+              })
+              .select("id");
+
+          if (createTemplateError) {
+            throw createTemplateError;
+          }
+          template = newTemplate && newTemplate[0];
+        } else if (existingTemplates && existingTemplates.length > 0) {
+          template = existingTemplates[0];
+        }
+
+        // Now save the expenses to the template
+        if (template) {
   for (const expense of fixedExpenses) {
   const isNewExpense =
     expense.id.length > 30;
@@ -245,6 +273,7 @@ console.log(
     }
   }
 }
+        }
 }
 
       router.push("/dashboard");
