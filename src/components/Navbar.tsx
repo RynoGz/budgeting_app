@@ -116,18 +116,18 @@ export default function Navbar() {
             </svg>
           </button>
 
-          {/* Desktop Install Button */}
+          {/* Install Button */}
           {showInstallButton && (
             <button
               onClick={handleInstall}
-              className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 active:text-blue-700 dark:active:text-blue-300 font-medium transition-colors text-sm shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-2 px-2 sm:px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 active:text-blue-700 dark:active:text-blue-300 font-medium transition-colors text-xs sm:text-sm shrink-0 cursor-pointer"
               title="Install app"
               type="button"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-              Download
+              <span className="hidden sm:inline">Download</span>
             </button>
           )}
 
@@ -176,23 +176,6 @@ export default function Navbar() {
             >
               Create Budget
             </button>
-
-            {/* Mobile Install Button */}
-            {showInstallButton && (
-              <button
-                onClick={() => {
-                  handleInstall();
-                  setIsMenuOpen(false);
-                }}
-                className="w-full text-left px-4 py-3 text-blue-600 dark:text-blue-400 active:text-blue-700 dark:active:text-blue-300 active:bg-blue-50 dark:active:bg-blue-900/20 rounded-lg transition-colors font-medium flex items-center gap-2 cursor-pointer"
-                type="button"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download App
-              </button>
-            )}
           </div>
         </div>
       )}
