@@ -93,14 +93,20 @@ export default function CreateBudgetPage() {
     )
   );
 }
-    function addFixedExpense() {
-  if (
-    !newExpenseName.trim() ||
-    !newExpenseCategory.trim() ||
-    !newExpenseAmount
-  ) {
-    return;
-  }
+  function addFixedExpense() {
+    const amount = Number(newExpenseAmount);
+
+    if (
+      !newExpenseName.trim() ||
+      !newExpenseCategory.trim() ||
+      !Number.isFinite(amount) ||
+      amount <= 0
+    ) {
+      setMessage(
+        "Enter a name, category, and a valid fixed-expense amount."
+      );
+      return;
+    }
 
   setFixedExpenses((prev) => [
     ...prev,
@@ -108,7 +114,7 @@ export default function CreateBudgetPage() {
       id: crypto.randomUUID(),
       name: newExpenseName,
       category: newExpenseCategory,
-      amount: Number(newExpenseAmount),
+      amount,
     },
   ]);
 
@@ -136,53 +142,63 @@ export default function CreateBudgetPage() {
       const month = now.getMonth() + 1;
       const year = now.getFullYear();
 
-      const { error: budgetInsertError } =
+      const salaryAmount = Number(salary);
+      const savingsGoalAmount = Number(savingsGoal);
+
+      if (
+        !Number.isFinite(salaryAmount) ||
+        salaryAmount < 0 ||
+        !Number.isFinite(savingsGoalAmount) ||
+        savingsGoalAmount < 0
+      ) {
+        setMessage("Enter valid, non-negative amounts for salary and savings.");
+        return;
+      }
+
+      const { data: existingBudget, error: existingBudgetError } =
+        await supabase
+          .from("monthly_budgets")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("month", month)
+          .eq("year", year)
+          .maybeSingle();
+
+      if (existingBudgetError) {
+        throw existingBudgetError;
+      }
+
+      if (existingBudget) {
+        setMessage("A budget for this month already exists. Open your dashboard to manage it.");
+        return;
+      }
+
+      const { data: budget, error: budgetInsertError } =
         await supabase
           .from("monthly_budgets")
           .insert({
             user_id: user.id,
             month,
             year,
-            salary: Number(salary),
-            savings_goal: Number(savingsGoal),
-          });
-
-      console.log("Budget insert error:", budgetInsertError);
+            salary: salaryAmount,
+            savings_goal: savingsGoalAmount,
+          })
+          .select("id")
+          .single();
 
       if (budgetInsertError) {
-        console.error("Budget error:", budgetInsertError);
         throw budgetInsertError;
       }
 
-      // Fetch the budget we just created
-      const { data: budgetData, error: budgetFetchError } =
-        await supabase
-          .from("monthly_budgets")
-          .select("id, salary, savings_goal")
-          .eq("user_id", user.id)
-          .eq("month", month)
-          .eq("year", year);
-
-      console.log("Budget fetch response:", { budgetData, budgetFetchError });
-
-      if (budgetFetchError || !budgetData || budgetData.length === 0) {
-        const errorMsg = "Failed to create budget. A budget may already exist for this month.";
-        console.error(errorMsg, { budgetData, budgetFetchError });
-        throw new Error(errorMsg);
+      if (!budget) {
+        throw new Error("The monthly budget was created without an ID.");
       }
-
-      const budget = budgetData[0];
-      console.log("Budget created:", budget);
 
       // Use the local fixedExpenses state which includes both template and newly added expenses
       if (
         fixedExpenses &&
         fixedExpenses.length > 0
       ) {
-        console.log(
-  "Preparing to copy expenses:",
-  fixedExpenses
-);
         const expensesToInsert =
           fixedExpenses.map((expense) => ({
             monthly_budget_id: budget.id,
@@ -191,21 +207,15 @@ export default function CreateBudgetPage() {
             amount: expense.amount,
           }));
 
-        console.log("Expenses to insert:", expensesToInsert);
-
         const { error: copyError } =
           await supabase
             .from("monthly_fixed_expenses")
             .insert(expensesToInsert);
 
-        console.log("Fixed expenses insert response:", { copyError });
-
         if (copyError) {
           throw copyError;
         }
       }
-
-      console.log("saveAsDefault:", saveAsDefault, "fixedExpenses.length:", fixedExpenses.length);
 
       if (saveAsDefault && fixedExpenses.length > 0) {
         let template = null;
@@ -311,6 +321,8 @@ export default function CreateBudgetPage() {
                 <span className="absolute left-4 top-3 text-slate-500 font-semibold">R</span>
                 <input
                   type="number"
+                  min="0"
+                  step="0.01"
                   value={salary}
                   onChange={(e) =>
                     setSalary(e.target.value)
@@ -330,6 +342,8 @@ export default function CreateBudgetPage() {
                 <span className="absolute left-4 top-3 text-slate-500 font-semibold">R</span>
                 <input
                   type="number"
+                  min="0"
+                  step="0.01"
                   value={savingsGoal}
                   onChange={(e) =>
                     setSavingsGoal(e.target.value)
@@ -363,6 +377,8 @@ export default function CreateBudgetPage() {
                         <span className="absolute left-3 top-2.5 text-slate-500 text-sm">R</span>
                         <input
                           type="number"
+                          min="0"
+                          step="0.01"
                           value={expense.amount}
                           onChange={(e) =>
                             updateExpenseAmount(
@@ -424,6 +440,8 @@ export default function CreateBudgetPage() {
                     <span className="absolute left-4 top-2.5 text-slate-500">R</span>
                     <input
                       type="number"
+                      min="0.01"
+                      step="0.01"
                       placeholder="Amount"
                       value={newExpenseAmount}
                       onChange={(e) =>

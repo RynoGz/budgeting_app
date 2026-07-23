@@ -1,8 +1,6 @@
 const CACHE_NAME = 'budgetchom-v1';
 const urlsToCache = [
-  '/',
   '/manifest.json',
-  '/globals.css',
 ];
 
 // Install event - cache files
@@ -37,6 +35,35 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Always prefer a fresh document after a deployment. Cached navigation
+  // responses can otherwise keep an older version of the UI alive.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+          return response;
+        })
+        .catch(() =>
+          caches.match(event.request).then(
+            (response) =>
+              response ||
+              new Response('Offline - Page not available', {
+                status: 503,
+                statusText: 'Service Unavailable',
+                headers: new Headers({
+                  'Content-Type': 'text/plain',
+                }),
+              })
+          )
+        )
+    );
     return;
   }
 

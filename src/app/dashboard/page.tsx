@@ -147,10 +147,6 @@ if (!expenseRowsError && expenseRows) {
     loadDashboard();
   }, [router]);
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push("/login");
-  }
   async function handleAddExpense() {
   try {
     if (!budget) return;
