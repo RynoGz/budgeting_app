@@ -14,6 +14,7 @@ type Budget = {
 type FixedExpense = {
   id: string;
   name: string;
+  category: string;
   amount: number;
 };
 
@@ -73,8 +74,18 @@ const [amount, setAmount] =
 const [expenseMessage, setExpenseMessage] =
   useState("");
 
-const [savingExpense, setSavingExpense] =
+  const [savingExpense, setSavingExpense] =
   useState(false);
+
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+  const [editSalary, setEditSalary] = useState("");
+  const [editSavingsGoal, setEditSavingsGoal] = useState("");
+  const [newFixedExpenseName, setNewFixedExpenseName] = useState("");
+  const [newFixedExpenseCategory, setNewFixedExpenseCategory] =
+    useState("");
+  const [newFixedExpenseAmount, setNewFixedExpenseAmount] = useState("");
+  const [budgetMessage, setBudgetMessage] = useState("");
+  const [savingBudget, setSavingBudget] = useState(false);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -131,7 +142,7 @@ if (!expenseRowsError && expenseRows) {
         error: expenseError,
       } = await supabase
         .from("monthly_fixed_expenses")
-        .select("id, name, amount")
+        .select("id, name, category, amount")
         .eq(
           "monthly_budget_id",
           budgetData.id
@@ -224,6 +235,104 @@ if (!expenseRowsError && expenseRows) {
     setSavingExpense(false);
   }
 }
+
+  function startEditingBudget() {
+    if (!budget) return;
+
+    setEditSalary(budget.salary.toString());
+    setEditSavingsGoal(budget.savings_goal.toString());
+    setBudgetMessage("");
+    setIsEditingBudget(true);
+  }
+
+  async function handleUpdateBudget() {
+    if (!budget) return;
+
+    const salary = Number(editSalary);
+    const savingsGoal = Number(editSavingsGoal);
+
+    if (
+      !Number.isFinite(salary) ||
+      salary < 0 ||
+      !Number.isFinite(savingsGoal) ||
+      savingsGoal < 0
+    ) {
+      setBudgetMessage("Enter valid, non-negative amounts for income and savings.");
+      return;
+    }
+
+    try {
+      setSavingBudget(true);
+      setBudgetMessage("");
+
+      const { data, error } = await supabase
+        .from("monthly_budgets")
+        .update({ salary, savings_goal: savingsGoal })
+        .eq("id", budget.id)
+        .select("id, salary, savings_goal")
+        .single();
+
+      if (error) throw error;
+
+      setBudget(data);
+      setBudgetMessage("Budget updated successfully.");
+    } catch (error) {
+      console.error(error);
+      setBudgetMessage("Could not update the budget. Please try again.");
+    } finally {
+      setSavingBudget(false);
+    }
+  }
+
+  async function handleAddFixedExpense() {
+    if (!budget) return;
+
+    const amount = Number(newFixedExpenseAmount);
+
+    if (
+      !newFixedExpenseName.trim() ||
+      !newFixedExpenseCategory.trim() ||
+      !Number.isFinite(amount) ||
+      amount <= 0
+    ) {
+      setBudgetMessage(
+        "Enter a name, category, and a valid amount for the fixed expense."
+      );
+      return;
+    }
+
+    try {
+      setSavingBudget(true);
+      setBudgetMessage("");
+
+      const { data, error } = await supabase
+        .from("monthly_fixed_expenses")
+        .insert({
+          monthly_budget_id: budget.id,
+          name: newFixedExpenseName.trim(),
+          category: newFixedExpenseCategory.trim(),
+          amount,
+        })
+        .select("id, name, category, amount")
+        .single();
+
+      if (error) throw error;
+
+      setFixedExpenses((currentExpenses) => [
+        ...currentExpenses,
+        data,
+      ]);
+      setNewFixedExpenseName("");
+      setNewFixedExpenseCategory("");
+      setNewFixedExpenseAmount("");
+      setBudgetMessage("Fixed expense added successfully.");
+    } catch (error) {
+      console.error(error);
+      setBudgetMessage("Could not add the fixed expense. Please try again.");
+    } finally {
+      setSavingBudget(false);
+    }
+  }
 
     async function handleDeleteExpense(
   id: string
@@ -339,8 +448,8 @@ const remaining =
           {/* Header Section */}
           <div className="mb-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <div>
-                <h1 className="text-4xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+               <div>
+                 <h1 className="text-4xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
                 <p className="text-slate-600 dark:text-slate-400 mt-2">
                   {new Date().toLocaleString(
                     "default",
@@ -349,8 +458,17 @@ const remaining =
                       year: "numeric",
                     }
                   )}
-                </p>
-              </div>
+                 </p>
+               </div>
+               {budget && (
+                 <button
+                   onClick={startEditingBudget}
+                   className="px-5 py-2.5 rounded-lg border-2 border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all font-semibold"
+                   type="button"
+                 >
+                   Edit Budget
+                 </button>
+               )}
             </div>
 
             {/* Main Remaining Balance Card */}
@@ -506,7 +624,108 @@ const remaining =
                   </div>
                 </div>
 
-              </div>
+               </div>
+
+               {isEditingBudget && (
+                 <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-6 mb-8 space-y-5">
+                   <div className="flex items-center justify-between gap-4">
+                     <div>
+                       <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                         Edit This Month&apos;s Budget
+                       </h2>
+                       <p className="text-slate-600 dark:text-slate-400 mt-1">
+                         Update amounts or add a fixed expense you missed.
+                       </p>
+                     </div>
+                     <button
+                       onClick={() => setIsEditingBudget(false)}
+                       className="text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                       type="button"
+                     >
+                       Close
+                     </button>
+                   </div>
+
+                   <div className="grid sm:grid-cols-2 gap-4">
+                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+                       Monthly income
+                       <input
+                         type="number"
+                         min="0"
+                         step="0.01"
+                         value={editSalary}
+                         onChange={(event) => setEditSalary(event.target.value)}
+                         className="mt-2 w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       />
+                     </label>
+                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+                       Savings goal
+                       <input
+                         type="number"
+                         min="0"
+                         step="0.01"
+                         value={editSavingsGoal}
+                         onChange={(event) => setEditSavingsGoal(event.target.value)}
+                         className="mt-2 w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       />
+                     </label>
+                   </div>
+
+                   <button
+                     onClick={handleUpdateBudget}
+                     disabled={savingBudget}
+                     className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold disabled:opacity-50"
+                     type="button"
+                   >
+                     Save Budget Changes
+                   </button>
+
+                   <div className="border-t border-slate-200 dark:border-slate-700 pt-5">
+                     <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+                       Add a missed fixed expense
+                     </h3>
+                     <div className="grid md:grid-cols-4 gap-3">
+                       <input
+                         type="text"
+                         placeholder="Name (e.g. Rent)"
+                         value={newFixedExpenseName}
+                         onChange={(event) => setNewFixedExpenseName(event.target.value)}
+                         className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       />
+                       <input
+                         type="text"
+                         placeholder="Category"
+                         value={newFixedExpenseCategory}
+                         onChange={(event) => setNewFixedExpenseCategory(event.target.value)}
+                         className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       />
+                       <input
+                         type="number"
+                         min="0.01"
+                         step="0.01"
+                         placeholder="Amount"
+                         value={newFixedExpenseAmount}
+                         onChange={(event) => setNewFixedExpenseAmount(event.target.value)}
+                         className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       />
+                       <button
+                         onClick={handleAddFixedExpense}
+                         disabled={savingBudget}
+                         className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold disabled:opacity-50"
+                         type="button"
+                       >
+                         Add Fixed Expense
+                       </button>
+                     </div>
+                   </div>
+
+                   {budgetMessage && (
+                     <p className={budgetMessage.includes("success") ? "text-green-600" : "text-red-600"}>
+                       {budgetMessage}
+                     </p>
+                   )}
+                 </div>
+               )}
 
               {/* Add Expense Section */}
               <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-6 mb-8">

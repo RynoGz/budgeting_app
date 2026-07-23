@@ -59,7 +59,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-white dark:bg-slate-800 shadow-md sticky top-0 z-50 touch-manipulation">
+    <nav className="safe-area-top bg-white dark:bg-slate-800 shadow-md sticky top-0 z-50 touch-manipulation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
 
         <div className="flex items-center gap-4 sm:gap-8 flex-1">
@@ -144,7 +144,7 @@ export default function Navbar() {
 
       {/* Mobile Navigation Menu Dropdown */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 fixed left-0 right-0 top-16 z-40 max-h-[calc(100vh-4rem)] overflow-y-auto">
+        <div className="safe-area-menu md:hidden bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 fixed left-0 right-0 z-40 overflow-y-auto">
           <div className="px-4 py-3 space-y-2">
             <button
               onClick={() => {

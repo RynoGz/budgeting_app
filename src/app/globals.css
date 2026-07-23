@@ -36,6 +36,16 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Keep PWA controls clear of iPhone and Android system status areas. */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-area-menu {
+  top: calc(4rem + env(safe-area-inset-top, 0px));
+  max-height: calc(100vh - 4rem - env(safe-area-inset-top, 0px));
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
